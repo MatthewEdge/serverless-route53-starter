@@ -1,0 +1,48 @@
+---
+Description: S3 resources for web client
+
+Parameters:
+  AppName:
+    Description: Name of the app being deployed
+    Type: String
+  
+  HostedZone:
+    Description: Route53 Hosted Zone to add a CNAME record to
+    Type: String
+    Default: medgelabs.io
+
+Resources:
+    WebsiteBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Sub "${AppName}.medgelabs.io"
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+
+    WebsiteBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref WebsiteBucket
+        PolicyDocument:
+          Statement:
+            - Action:
+                - s3:GetObject
+              Effect: Allow
+              Resource: !Sub "arn:aws:s3:::${WebsiteBucket}/*"
+              Principal: "*"
+
+    Route53RecordSet:
+      Type: "AWS::Route53::RecordSet"
+      Properties:
+        ResourceRecords:
+          - !GetAtt [WebsiteBucket, WebsiteURL]
+        Type: CNAME
+        TTL: 300
+        HostedZoneName: !Sub "${HostedZone}."
+        Name: !Sub "${AppName}.${HostedZone}"
+
+Outputs:
+  BucketName:
+    Description: Name of the created bucket
+    Value: !Ref WebsiteBucket

@@ -1,0 +1,29 @@
+# sls deploy --app-name APP_NAME_HERE (no spaces / special characters other than '-' or '_' )
+service: ${opt:app-name}
+
+plugins:
+  - serverless-webpack
+  - serverless-domain-manager
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  region: us-east-1
+  stage: dev
+
+functions:
+  images:
+    handler: handler.main
+    events:
+      - http:
+          method: get
+          path: /
+          integration: lambda-proxy
+
+custom:
+  customDomain:
+    domainName: ${opt:app-name}-api.medgelabs.io
+    certificateName: '*.medgelabs.io'
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
